@@ -40,35 +40,34 @@ pipeline {
         }
 
         stage('Deploy to Next.js Server') {
-            steps {
-                echo 'Deploying to Next.js Production Server....'
-                
-           
-                withCredentials([
-                    sshUserPrivateKey(credentialsId: 'nextjs-server-ssh', keyFileVariable: 'IDENTITY_KEY'),
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_KEY')
-                ]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no -i "\${IDENTITY_KEY}" ubuntu@${PROD_SERVER_IP} "
-                            sudo docker pull ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest
-                            sudo docker stop nextjs-container || true
-                            sudo docker rm nextjs-container || true
-                            
-                            sudo docker run -d --name nextjs-container \
-                              --restart always \
-                              -p 3000:3000 \
-                              -e AWS_REGION='us-east-1' \
-                              -e AWS_ACCESS_KEY_ID='\${AWS_KEY_ID}' \
-                              -e AWS_SECRET_ACCESS_KEY='\${AWS_SECRET_KEY}' \
-                              ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest
-                              
-                            sudo docker image prune -a -f || true
-                        "
-                    """
-                }
-            }
+    steps {
+        echo 'Deploying to Next.js Production Server....'
+        withCredentials([
+            sshUserPrivateKey(credentialsId: 'nextjs-server-ssh', keyFileVariable: 'IDENTITY_KEY'),
+            string(credentialsId: 'aws-access-key-id', variable: 'AWS_KEY_ID'),
+            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_KEY')
+        ]) {
+            sh """
+                ssh -o StrictHostKeyChecking=no -i "\${IDENTITY_KEY}" ubuntu@${PROD_SERVER_IP} "
+                    sudo docker pull ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest
+                    sudo docker stop nextjs-container || true
+                    sudo docker rm nextjs-container || true
+                    
+                    sudo docker run -d --name nextjs-container \
+                      --restart always \
+                      -p 3000:3000 \
+                      -e AWS_REGION='us-east-1' \
+                      -e AWS_ACCESS_KEY_ID='\${AWS_KEY_ID}' \
+                      -e AWS_SECRET_ACCESS_KEY='\${AWS_SECRET_KEY}' \
+                      -e S3_BUCKET_NAME='my-secure-cloud-drive-2026' \
+                      ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest
+                      
+                    sudo docker image prune -a -f || true
+                "
+            """
         }
+    }
+}
     }
 
     post {
