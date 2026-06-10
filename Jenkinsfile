@@ -6,7 +6,7 @@ pipeline {
         IMAGE_NAME      = 'nextjs-app'
         IMAGE_TAG       = "${BUILD_NUMBER}"
         
-        PROD_SERVER_IP  = '3.222.216.236'
+        PROD_SERVER_IP  = '52.2.148.25'
     }
 
     stages {
