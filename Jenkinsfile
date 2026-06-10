@@ -19,10 +19,14 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker Image...'
+                echo 'Cleaning old build cache and Building Docker Image...'
                 script {
+        
+                    sh "docker builder prune -f || true"
+                    
+         
                     sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
-                    sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest ."
+                    sh "docker tag ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
                 }
             }
         }
@@ -42,7 +46,6 @@ pipeline {
             steps {
                 echo 'Deploying to Next.js Production Server...'
                 
-            
                 withCredentials([sshUserPrivateKey(credentialsId: 'nextjs-server-ssh', keyFileVariable: 'IDENTITY_KEY')]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no -i "\${IDENTITY_KEY}" ubuntu@${PROD_SERVER_IP} "
@@ -50,6 +53,9 @@ pipeline {
                             sudo docker stop nextjs-container || true
                             sudo docker rm nextjs-container || true
                             sudo docker run -d --name nextjs-container --restart always -p 3000:3000 ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest
+                            
+                         
+                            sudo docker image prune -a -f || true
                         "
                     """
                 }
